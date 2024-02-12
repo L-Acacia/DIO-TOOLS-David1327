@@ -845,11 +845,11 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
         dio_eee: false,
 
         //////////////
-        dio_Sav: false,
+        dio_Sav: true,
         dio_tro: false,
     };
 
-    DATA.options.dio_Sav = false
+    DATA.options.dio_Sav = true
     saveValue("options", JSON.stringify(DATA.options));
 
     if (!uw.Game.features.end_game_type == "end_game_type_world_wonder") {
@@ -1676,8 +1676,9 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
             case "dio_Att":
                 FEATURE = AttacksAlarms;
                 break;
-
-
+            case "dio_Sav":
+                FEATURE = Save_troops;
+                break;
             default:
                 activation = false;
                 break;
@@ -1889,6 +1890,8 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                     if (DATA.options.dio_scr) setTimeout(() => { MouseWheelZoom.activate(); }, 0);
                     if (DATA.options.dio_sim) setTimeout(() => { Simulator.activate(); }, 0);
                     if (DATA.options.dio_sen) setTimeout(() => { SentUnits.activate(); }, 0);
+                    if (DATA.options.dio_Sav) setTimeout(() => { Save_troops.activate(); }, 0);
+                    if (DATA.options.dio_sen || DATA.options.dio_Sav) { ObserverSEND_UNITS() }
                     if (uw.Game.features.end_game_type == "end_game_type_world_wonder") {
                         if (DATA.options.dio_wwc) setTimeout(() => { WorldWonderCalculator.activate(); }, 0);
                     }
@@ -6146,6 +6149,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                                 ShortDuration.add(wndID, action);
                             } else $("#dio_short_duration_stylee").remove();
                             if (DATA.options.dio_sen) SentUnits.add(wndID, action);
+                            if (DATA.options.dio_Sav) Save_troops.add(wndID, action);
                             break;
                         case "rec_mark":
                             break;
@@ -6172,8 +6176,76 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
      * ● Sent units box
      *******************************************************************************************************************************/
 
+    let actObserver;
+    function ObserverSEND_UNITS() {
+        if (!actObserver) actObserver = true
+        else return
+        $.Observer(uw.GameEvents.command.send_unit).subscribe('DIO_SEND_UNITS', function (e, data) {
+            if (DATA.options.dio_sen) {
+                // We handle revolt in the same pool as a regular attack & portal olympus
+                if (data.sending_type === "revolt" || data.sending_type === "portal_attack_olympus") data.sending_type = "attack";
+                if (data.sending_type === "portal_support_olympus") data.sending_type = "support";
+                for (var z in data.params) {
+                    if (data.params.hasOwnProperty(z) && (data.sending_type !== "")) {
+                        if (uw.GameData.units[z]) {
+                            sentUnitsArray[data.sending_type][z] = (sentUnitsArray[data.sending_type][z] == undefined ? 0 : sentUnitsArray[data.sending_type][z]);
+                            sentUnitsArray[data.sending_type][z] += data.params[z];
+                        }
+                    }
+                }
+                SentUnits.update(data.sending_type);
+            }
+            if (DATA.options.dio_Sav && DATA.options.dio_tro) {
+                // Copier les valeurs actuelles des champs de saisie
+                var inputValues = $(".town_info_input").map(function () { return $(this).val(); }).get();
+                var inputValuess = $(".cbx_include_hero").map(function () { return console.log($(this)[0].classList); $(this)[0].classList; }).get();
+                console.log(inputValuess)
+                // Restaurer les valeurs des champs de saisie
+                setTimeout(() => { 
+                    $(".town_info_input").each(function (index) { $(this).val(inputValues[index]); });
+                    document.querySelectorAll('input.unit_type_sword')
+                        .forEach((el) => { el.dispatchEvent(new Event('change')) });
+                }, 20);
+            }
+        });
+    }
+
+    var Save_troops = {
+        activate: () => {
+            if (!DATA.options.dio_sen) { ObserverSEND_UNITS() }
+            $('<style id="dio_Save_troops_style"> ' +
+                '#dio_tro { margin-right: 10px; }' +
+                '</style>').appendTo("head");
+        },
+        add: (wndID) => {
+            if (!$(wndID + ' #dio_tro').get(0)) {
+                $(wndID + ".button_wrapper > a.button").before('<div id="dio_tro" class="checkbox_new large"><div class="cbx_icon"></div><div class="cbx_caption"></div></div>');
+                $(wndID + "#btn_attack_town").before('<div id="dio_tro" class="checkbox_new large"><div class="cbx_icon"></div><div class="cbx_caption"></div></div>');
+            }
+            else return
+
+            if (DATA.options.dio_tro === true) { $("#dio_tro.checkbox_new").addClass("checked"); }
+            $(wndID + "#dio_tro.checkbox_new").click(() => {
+                $("#dio_tro.checkbox_new").toggleClass("checked");
+                DATA.options.dio_tro = $(wndID + "#dio_tro").hasClass("checked");
+                saveValue("options", JSON.stringify(DATA.options));
+            });
+
+            //tooltip
+            $(wndID + '#dio_tro').tooltip(dio_icon + "Save sent troops : This might be BANNABLE");
+        },
+        deactivate: () => {
+            if (!DATA.options.dio_sen || !DATA.options.dio_Sav) {
+                $.Observer(uw.GameEvents.command.send_unit).unsubscribe('DIO_SEND_UNITS');
+                actObserver = false
+            }
+            $('#dio_Save_troops_style').remove();
+        },
+    }
+
     var SentUnits = {
         activate: () => {
+            if (!DATA.options.dio_Sav) { ObserverSEND_UNITS() }
             $('<style id="dio_SentUnits_style"> ' +
                 '#dio_table_box .icon_sent { height: 20px; margin-top: -2px; width: 20px; background-position-y: -26px; padding-left: 0px; margin-left: 0px; } ' +
                 '#dio_table_box .sent_units_box { position: absolute; right: 0px; bottom: 0px; width: 192px; } ' +
@@ -6181,26 +6253,13 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 '#dio_table_box .troops hr { width: 172px;border: 1px solid rgb(185, 142, 93);margin: 3px 0px 2px -1px; } ' +
                 '.attack_support_window .additional_info_wrapper { margin-top: -8px; } ' +
                 '</style>').appendTo("head");
-
-            $.Observer(uw.GameEvents.command.send_unit).subscribe('DIO_SEND_UNITS', function (e, data) {
-                if (DATA.options.dio_sen) {
-                    // We handle revolt in the same pool as a regular attack & portal olympus
-                    if (data.sending_type === "revolt" || data.sending_type === "portal_attack_olympus") data.sending_type = "attack";
-                    if (data.sending_type === "portal_support_olympus") data.sending_type = "support";
-                    for (var z in data.params) {
-                        if (data.params.hasOwnProperty(z) && (data.sending_type !== "")) {
-                            if (uw.GameData.units[z]) {
-                                sentUnitsArray[data.sending_type][z] = (sentUnitsArray[data.sending_type][z] == undefined ? 0 : sentUnitsArray[data.sending_type][z]);
-                                sentUnitsArray[data.sending_type][z] += data.params[z];
-                            }
-                        }
-                    }
-                    SentUnits.update(data.sending_type);
-                }
-            });
         },
         deactivate: () => {
-            $.Observer(uw.GameEvents.command.send_unit).unsubscribe('DIO_SEND_UNITS');
+            if (!DATA.options.dio_sen || !DATA.options.dio_Sav) {
+                $.Observer(uw.GameEvents.command.send_unit).unsubscribe('DIO_SEND_UNITS');
+                $.Observer(uw.GameEvents.command.send_unit).unsubscribe('DIO_SEND_UNITS');
+                actObserver = false
+            }
             $('#dio_table_box').remove();
             $('#dio_SentUnits_style').remove();
             $('#dio_SentUnits_modif_style').remove();
@@ -11658,6 +11717,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 '.dio_idle_days.dg { background-position: 0px 0px; } ' +
                 '.dio_idle_days.dy { background-position: 0px -12px; } ' +
                 '.dio_idle_days.dr { background-position: 0px -24px; } ' +
+                '.dio_idle_days.db { background: url(https://cdn.discordapp.com/attachments/852734145582071839/1203052661654683698/image.png?ex=65cfb11a&is=65bd3c1a&hm=cfc9ede14968dd4fdc47d97193fcd2d47c65ae35efd06137778a506991f7692f&) } ' +
                 '.dio_idle_days { background: url(' + Home_url + '/img/dio/logo/idle.png) 0 0 no-repeat; color: white; text-align: center; font-size: 8px; vertical-align: middle; text-shadow: 1px 1px black; min-width: 20px; min-height: 11px; padding-top: 1px; cursor: help; } ' +
                 '</style>').appendTo('head');
 
@@ -11669,7 +11729,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
             idle.add("info")
         },
         add: (action, b) => {
-            if ($("#grcrt_mnu .icon").is(":visible") && action != "message") return
+            if ( action != "message" && compatibility.grcrt.isIdle()) return
 
             if (action == "island_info") {
                 let Ally = uw.MM.DIO.cacheAlliances, add_player, add_Ally, player;
@@ -11713,14 +11773,17 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                         $(this).parent().find('.dio_idle').addClass("dio_idle_days").addClass("dg");
                         idle_nb = -2;
                         if (typeof (uw.MM.DIO.player_idle[uw.MM.DIO.cachePlayers[playerName].id]) !== "undefined") {
-                            idle_nb = uw.MM.DIO.player_idle[uw.MM.DIO.cachePlayers[playerName].id];
+                            idle_nb = uw.MM.DIO.player_idle[uw.MM.DIO.cachePlayers[playerName].id] * 24;
+                            if(idle_nb === 1) idle_nb = 0;
                         }
-                        //console.log(idle_nb)
                     }
                     $(this).parent().find('.dio_idle').html(0 > parseInt(idle_nb) ? (idle_nb == -2 ? "?" : "") : parseInt(idle_nb));
 
-                    $(this).parent().find('.dio_idle').tooltip('<div style="white-space: nowrap; min-width: 220px;">' + dio_icon + "<b>" + ina + ": </b>" + (0 > parseInt(idle_nb) ? "???" : uw.hours_minutes_seconds(3600 * parseInt(24 * idle_nb)) || "0") + '<br/><span style="font-size:75%;">Powered by GREPODATA ≈' + uw.hours_minutes_seconds(3600) + '</span></div>');
+                    $(this).parent().find('.dio_idle').tooltip('<div style="white-space: nowrap; min-width: 220px;">' + dio_icon + "<b>" + ina + ": </b>" + (0 > parseInt(idle_nb) ? "???" : uw.hours_minutes_seconds(3600 * parseInt(idle_nb)) || "0") + '<br/><span style="font-size:75%;">Powered by GREPODATA ≈' + uw.hours_minutes_seconds(3600) + '</span></div>');
                     7 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 2 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
+                    72 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg db") : 
+                    24 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 
+                    6 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
                 }
             });
         },
