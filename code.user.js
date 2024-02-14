@@ -11780,7 +11780,6 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                     $(this).parent().find('.dio_idle').html(0 > parseInt(idle_nb) ? (idle_nb == -2 ? "?" : "") : parseInt(idle_nb));
 
                     $(this).parent().find('.dio_idle').tooltip('<div style="white-space: nowrap; min-width: 220px;">' + dio_icon + "<b>" + ina + ": </b>" + (0 > parseInt(idle_nb) ? "???" : uw.hours_minutes_seconds(3600 * parseInt(idle_nb)) || "0") + '<br/><span style="font-size:75%;">Powered by GREPODATA ≈' + uw.hours_minutes_seconds(3600) + '</span></div>');
-                    7 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 2 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
                     72 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg db") : 
                     24 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 
                     6 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
