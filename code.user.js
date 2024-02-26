@@ -2,7 +2,7 @@
 // @name		DIO-TOOLS-David1327
 // @name:fr		DIO-TOOLS-David1327
 // @namespace	https://www.tuto-de-david1327.com/pages/info/dio-tools-david1327.html
-// @version		4.34.2
+// @version		4.35.3
 // @author		DIONY (changes and bug fixes by David1327)
 // @description Version 2024. DIO-Tools + Quack is a small extension for the browser game Grepolis. (counter, displays, smilies, trade options, changes to the layout)
 // @description:FR Version 2024. DIO-Tools + Quack est une petite extension du jeu par navigateur Grepolis. (compteur, affichages, smileys, options commerciales, modifications de la mise en page)
@@ -2411,7 +2411,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
         getTooltip(a) {
             if (uw.GameData.researches[a]) return "<b>" + uw.GameData.researches[a].name + "</b><br/><br/>" + uw.GameData.researches[a].description;
             else if (uw.GameData.buildings[a]) return "<b>" + uw.GameData.buildings[a].name + "</b><br/><br/>" + uw.GameData.buildings[a].description;
-            else if (uw.GameData.powers[a]) return uw.us.template(uw.DM.getTemplate("COMMON", "casted_power_tooltip"), $.extend({}, uw.GameDataPowers.getTooltipPowerData(uw.GameData.powers[a], { percent: 30, lifetime: 1800, level: 1 }, ''), null));
+            else if (uw.GameData.powers[a]) return uw.us.template(uw.DM.getTemplate("COMMON", "casted_power_tooltip"), $.extend({}, uw.GameDataPowers.getTooltipPowerData(uw.GameData.powers[a], { percent: 30, lifetime: 1800, level: (level ? level : 1) }, (level ? level : "")), null));
             return "??? " + a
         },
         getName(a) {
@@ -4325,16 +4325,19 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
 
                 if(DATA.options.dio_Tol) townslist.add();
 
-                let townHero = {};
+                let townHero = {}, i = DM.getl10n("heroes", "common");
                 if( !compatibility.grcrt.isTownList() && !window.MH?.initiated){
                     const heroes = MM.getCollections()['PlayerHero'][0];
                     if (heroes) {
                         heroes.getHeroes().forEach( function(hero) {
+                            let o = GameData.heroes[hero.getId()];
                             if (hero.getOriginTownId() !== null){
                                 townHero[hero.getOriginTownId()] = {
                                     id: hero.getId(),
                                     name: hero.getName(),
-                                    level: hero.getLevel()
+                                    level: hero.getLevel(),
+                                    category: i.hero_of[o.category],
+                                    txt_lvl: i.level(hero.getLevel())
                                 }
                             }
                         })
@@ -4369,8 +4372,9 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                             townicon_div = '<div class="dio_icon_small townicon_' + (manuTownTypes[town_id] || autoTownTypes[town_id] || "no") + '"></div>';
                             // TODO: Notlösung...
                             if (percent != -1) { percent_div = '<div class="pop_percent ' + pop_space + '">' + percent + '%</div>'; }
-                            if (townHero[town_id]) hero_div = '<div class="hero_icon hero25x25 '+ townHero[town_id].id +'"><div class="value" style="color: white; float: right; text-shadow: 1px 1px 0 #000; padding-top: 5px;" >'+ townHero[town_id].level +'</div></div>'
+                            if (townHero[town_id]) hero_div = '<div class="dio_hero hero_icon hero25x25 ' + townHero[town_id].id + '"><div class="value" style="color: white; float: right; text-shadow: 1px 1px 0 #000; padding-top: 5px;" >' + townHero[town_id].level + '</div></div>'
                             town_item.prepend(townicon_div + hero_div + percent_div);
+                            if (townHero[town_id]) $(town_item).find($('.dio_hero.hero_icon.' + townHero[town_id].id)).tooltip('<div class="ui_hero_tooltip_small"><div class="icon_border"><div class="icon hero50x50 ' + townHero[town_id].id + '"></div></div><b>' + townHero[town_id].name + '</b><br />' + townHero[town_id].category + '<br /><br /><b>' + townHero[town_id].txt_lvl + '</b><br /></div><div class="dio_icon b" style="position: absolute;bottom: 9px;right: 4px;"></div>')
                         }
                     } catch (error) { errorHandling(error, "TownList.change"); }
                 });
@@ -6400,11 +6404,9 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 $(wndID + " .arrival_time").appendTo(wndID + " .dio_arrival");
 
                 // Tooltip
-                $(wndID + ' .short_duration_row .short_icon').tooltip(dio.getTooltip("unit_movement_boost") + dio_icon)
-                $(wndID + ' .hades_duration_row .cap_of_invisibility').tooltip(dio.getTooltip("cap_of_invisibility") + dio_icon)
-                //$(wndID + '.short_duration_row').tooltip(dio_icon + (LANG.hasOwnProperty(LID) ? getTexts("labels", "improved_movement") : "") + " (+30% " + uw.DM.getl10n("barracks", "tooltips").speed.trim() + ")");
-                //$(wndID + '.hades_duration_row').tooltip(dio_icon + getTexts("labels", "cap_of_invisibility"));
-
+                $(wndID + ' .short_duration_row .short_icon').tooltip(dio.getTooltip("unit_movement_boost") + '<div class="dio_icon b" style="position: absolute;top: 9px;right: 4px;"></div>');
+                $(wndID + ' .hades_duration_row .cap_of_invisibility').tooltip(dio.getTooltip("cap_of_invisibility") + '<div class="dio_icon b" style="position: absolute;top: 9px;right: 4px;"></div>');
+                
                 // Detection of changes
                 ShortDuration.change(wndID, action);
                 ShortDuration.calculate(wndID, action);
