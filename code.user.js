@@ -2408,7 +2408,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
             let alliance = onclickAttributeValue.match(/\('(.*?)',/)[1].replace(/\\/g, ''); // Utilisez une expression régulière pour extraire le nom du joueur
             return alliance;
         },
-        getTooltip(a) {
+        getTooltip(a, level) {
             if (uw.GameData.researches[a]) return "<b>" + uw.GameData.researches[a].name + "</b><br/><br/>" + uw.GameData.researches[a].description;
             else if (uw.GameData.buildings[a]) return "<b>" + uw.GameData.buildings[a].name + "</b><br/><br/>" + uw.GameData.buildings[a].description;
             else if (uw.GameData.powers[a]) return uw.us.template(uw.DM.getTemplate("COMMON", "casted_power_tooltip"), $.extend({}, uw.GameDataPowers.getTooltipPowerData(uw.GameData.powers[a], { percent: 30, lifetime: 1800, level: (level ? level : 1) }, (level ? level : "")), null));
@@ -11705,7 +11705,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 '.dio_idle_days.dg { background-position: 0px 0px; } ' +
                 '.dio_idle_days.dy { background-position: 0px -12px; } ' +
                 '.dio_idle_days.dr { background-position: 0px -24px; } ' +
-                '.dio_idle_days.db { background: url(https://cdn.discordapp.com/attachments/852734145582071839/1203052661654683698/image.png?ex=65cfb11a&is=65bd3c1a&hm=cfc9ede14968dd4fdc47d97193fcd2d47c65ae35efd06137778a506991f7692f&) } ' +
+                '.dio_idle_days.db { background: url(https://raw.githubusercontent.com/L-Acacia/DIO-TOOLS-David1327/Opiniated/assets/black.png) } ' +
                 '.dio_idle_days { background: url(' + Home_url + '/img/dio/logo/idle.png) 0 0 no-repeat; color: white; text-align: center; font-size: 8px; vertical-align: middle; text-shadow: 1px 1px black; min-width: 20px; min-height: 11px; padding-top: 1px; cursor: help; } ' +
                 '</style>').appendTo('head');
 
