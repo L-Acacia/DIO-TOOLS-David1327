@@ -1,6 +1,5 @@
 // ==UserScript==
-// @name		DIO-TOOLS-David1327
-// @name:fr		DIO-TOOLS-David1327
+// @name		NE_DIO-TOOLS-David1327
 // @namespace	https://www.tuto-de-david1327.com/pages/info/dio-tools-david1327.html
 // @version		4.35.7
 // @author		DIONY and David1327
@@ -9,8 +8,6 @@
 // @match		https://*.grepolis.com/game/*
 // @match		https://*.forum.grepolis.com/*
 // @match		https://dio-david1327.github.io/*
-// @updateURL   https://dio-david1327.github.io/DIO-TOOLS-David1327/code.user.js
-// @downloadURL	https://dio-david1327.github.io/DIO-TOOLS-David1327/code.user.js
 // @require		https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js
 // @resource 	clipboard		https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js
 // @icon		https://dio-david1327.github.io/img/smileys/bussi2.gif
@@ -1978,6 +1975,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 case "/building_barracks/build":
                 case "/building_barracks/cancel":
                 case "/building_barracks/units":
+                    if (DATA.options.dio_tra) TransportCapacity.update();
                     if (DATA.options.dio_str) UnitStrength.Barracks.add();
                     if (DATA.options.dio_Rtt) dio.removeTooltipps();
                     if (DATA.options.dio_Rtt) dio.removeTooltipps("barracks");
@@ -1986,9 +1984,13 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 case "/building_docks/index":
                 case "/building_docks/build":
                 case "/building_docks/cancel":
+                    if (DATA.options.dio_tra) TransportCapacity.update();
                     if (DATA.options.dio_Rtt) dio.removeTooltipps();
                     if (DATA.options.dio_Rtt) dio.removeTooltipps("docks");
                     reload.add(action)
+                    break;
+                case "/town_overviews/recruit_overview":
+                    if (DATA.options.dio_tra) TransportCapacity.update();
                     break;
                 case "/building_place/index":
                 case "/building_place/units_beyond":
@@ -7506,58 +7508,83 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                     GD_heroes = uw.GameData.heroes,
                     trans_small = GD_units.small_transporter,
                     trans_big = GD_units.big_transporter;
-                let bigTransp = 0, smallTransp = 0, pop = 0, pop_def = 0, ship = 0, unit, berth, units = [];
+
+                let bigTransp = 0, bigTranspOut = 0, bigTranspSup = 0,
+                smallTransp = 0, smallTranspOut = 0, smallTranspSup = 0,
+                pop = 0, pop_def = 0, ship = 0, unit, berth, units = [];
 
                 // Ship space (available)
                 smallTransp = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).units().small_transporter, 10);
-                if (isNaN(smallTransp)) smallTransp = 0;
+                if (isNaN(smallTransp)){ smallTransp = 0;}
+
+                smallTranspOut = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).unitsOuter().small_transporter, 10);
+                if (isNaN(smallTranspOut)){smallTranspOut = 0;}
+
+                // smallTranspSup = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).unitsSupport().small_transporter, 10);
+                // if (isNaN(smallTranspSup)){smallTranspSup = 0;}
+
                 if (shipsize) {
                     bigTransp = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).units().big_transporter, 10);
                     if (isNaN(bigTransp)) bigTransp = 0;
+
+                    bigTranspOut = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).unitsOuter().big_transporter, 10);
+                    if (isNaN(bigTranspOut)) bigTranspOut = 0;
+
+                    // bigTranspSup = parseInt(uw.ITowns.getTown(parseInt(uw.Game.townId, 10)).unitsSupport().big_transporter, 10);
+                    // if (isNaN(bigTranspSup)) bigTranspSup = 0;
                 }
+
 
                 // Checking: Research berth
                 berth = 0;
                 if (uw.ITowns.getTown(uw.Game.townId).researches().hasBerth()) {
                     berth = uw.GameData.research_bonus.berth;
                 }
-                ship = bigTransp * (trans_big.capacity + berth) + smallTransp * (trans_small.capacity + berth);
+                ship = (bigTransp + bigTranspOut) * (trans_big.capacity + berth) + (smallTransp + smallTranspOut) * (trans_small.capacity + berth);
 
                 units = uw.ITowns.getTown(uw.Game.townId).units();
+                unitsOuter = uw.ITowns.getTown(uw.Game.townId).unitsOuter();
+                //unitsSupport =  uw.ITowns.getTown(uw.Game.townId).unitsSupport();
 
-                function isOff(name) { return GD_units[name].unit_function === "function_off" || GD_units[name].unit_function === "function_both" }
+                function isOff(name) { return GD_units[name].unit_function === "function_off" /*|| GD_units[name].unit_function === "function_both"*/ }
                 function isDef(name) { return GD_units[name].unit_function === "function_def" || GD_units[name].unit_function === "function_both" }
 
-                // Ship space (required)
-                for (var e in units) {
-                    if (units.hasOwnProperty(e)) {
-                        if (GD_units[e]) {
-                            if (isOff(e)) {
-                                if (e === "spartoi") {
-                                    pop += units[e];
-                                } else if (
-                                    !(GD_units[e].is_naval || GD_units[e].flying)
-                                ) {
-                                    pop += units[e] * GD_units[e].population;
-                                }
-                            }
+                getTotalUnits(units);
+                getTotalUnits(unitsOuter);
+                //getTotalUnits(unitsSupport);
 
-                            if (isDef(e)) {
-                                if (!(GD_units[e].is_naval || GD_units[e].flying)) {
-                                    pop_def += units[e] * GD_units[e].population;
+                //Adds units to total pop
+                function getTotalUnits(units){
+                    // Ship space (required)
+                    for (var e in units) {
+                        if (units.hasOwnProperty(e)) {
+                            if (GD_units[e]) {
+                                if (isOff(e)) {
+                                    if (e === "spartoi") {
+                                        pop += units[e];
+                                    } else if ( !(GD_units[e].is_naval || GD_units[e].flying) ){
+                                        pop += units[e] * GD_units[e].population;
+                                    }
+                                }
+
+                                if (isDef(e)) {
+                                    if ( !(GD_units[e].is_naval || GD_units[e].flying) ) {
+                                        pop += units[e] * GD_units[e].population;
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
+                //unité en recrutement
                 if ($(".dio_tr_recruit").parent().hasClass("checked")) {
                     const recruits = selected_town.getUnitOrdersCollection().models;
                     for (let i = 0; i < recruits.length; ++i) {
                         const unitt = recruits[i].attributes.unit_type,
                             number = recruits[i].attributes.units_left;
 
-                        // Landtruppen
+                        // terrestre
                         if (!(unitt in GD_heroes) && units[unitt] != 0 && !GD_units[unitt].flying && GD_units[unitt].capacity == undefined) {
                             if (isOff(unitt)) {
                                 if (unitt === "spartoi") { pop += number; }
@@ -7565,17 +7592,18 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                             }
 
                             if (isDef(unitt)) {
-                                if (unitt === "spartoi") { pop_def += number; }
-                                else { pop_def += number * GD_units[unitt].population; }
+                                if (unitt === "spartoi") { pop += number; }
+                                else { pop += number * GD_units[unitt].population; }
                             }
                         }
-                        // Transportschiffe
+                        // transport
                         else if (!(unitt in GD_heroes) && units[unitt] != 0 && !GD_units[unitt].flying && GD_units[unitt].capacity != 0) {
                             if (!shipsize) {
-                                if (unitt === "small_transporter") { ship += number * (GD_units[unitt].capacity + berth); }
-                                else return
+                                if (unitt === "small_transporter") { ship += number * (GD_units[unitt].capacity + berth);}
                             }
-                            if (shipsize) { ship += number * (GD_units[unitt].capacity + berth); }
+                            if (shipsize) {
+                                ship += number * (GD_units[unitt].capacity + berth);
+                            }
                         }
                     }
                 }
@@ -7612,6 +7640,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
             } catch (error) { errorHandling(error, "TransportCapacity (update)"); }
         },
     };
+
 
     /*******************************************************************************************************************************
      * Simulator
@@ -11899,7 +11928,7 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                         $(this).parent().find('.dio_idle').addClass("dio_idle_days").addClass("dg");
                         idle_nb = -2;
                         if (typeof (uw.DIO_TOOLS.player_idle[uw.DIO_TOOLS.cachePlayers[playerName].id]) !== "undefined") {
-                            idle_nb = uw.MM.DIO.player_idle[uw.MM.DIO.cachePlayers[playerName].id] * 24;
+                            idle_nb = uw.DIO_TOOLS.player_idle[uw.DIO_TOOLS.cachePlayers[playerName].id] * 24;
                             if(idle_nb === 1) idle_nb = 0;
                         }
                         //console.log(idle_nb)
