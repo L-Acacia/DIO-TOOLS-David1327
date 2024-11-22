@@ -11843,7 +11843,8 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                 '.dio_idle { min-width: 20px; min-height: 11px; background: url(' + Home_url + '/img/dio/logo/idle_loader2.gif) no-repeat; float: left; margin-right: 4px; margin-top: 3px; } ' +
                 '.dio_idle_days.dg { background-position: 0px 0px; } ' +
                 '.dio_idle_days.dy { background-position: 0px -12px; } ' +
-                '.dio_idle_days.dr { background-position: 0px -24px; } ' +
+                '.dio_idle_days.dr { background-position: 0px -24px; } ' +        
+                '.dio_idle_days.db { background: url(https://raw.githubusercontent.com/L-Acacia/DIO-TOOLS-David1327/Opiniated/assets/black.png) } ' +
                 '.dio_idle_days { background: url(' + Home_url + '/img/dio/logo/idle.png) 0 0 no-repeat; color: white; text-align: center; font-size: 8px; vertical-align: middle; text-shadow: 1px 1px black; min-width: 20px; min-height: 11px; padding-top: 1px; cursor: help; } ' +
                 '</style>').appendTo('head');
 
@@ -11854,7 +11855,6 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
             idle.add("info")
         },
         add: (action, b) => {
-            console.log()
             if (compat.grcrt.isIdle() && action != "message") return
 
             if (action == "island_info") {
@@ -11899,14 +11899,17 @@ function DIO_GAME(dio_version, gm, DATA, time_a, url_dev) {
                         $(this).parent().find('.dio_idle').addClass("dio_idle_days").addClass("dg");
                         idle_nb = -2;
                         if (typeof (uw.DIO_TOOLS.player_idle[uw.DIO_TOOLS.cachePlayers[playerName].id]) !== "undefined") {
-                            idle_nb = uw.DIO_TOOLS.player_idle[uw.DIO_TOOLS.cachePlayers[playerName].id];
+                            idle_nb = uw.MM.DIO.player_idle[uw.MM.DIO.cachePlayers[playerName].id] * 24;
+                            if(idle_nb === 1) idle_nb = 0;
                         }
                         //console.log(idle_nb)
                     }
                     $(this).parent().find('.dio_idle').html(0 > parseInt(idle_nb) ? (idle_nb == -2 ? "?" : "") : parseInt(idle_nb));
 
-                    $(this).parent().find('.dio_idle').tooltip('<div style="white-space: nowrap; min-width: 220px;">' + dio_icon + "<b>" + ina + ": </b>" + (0 > parseInt(idle_nb) ? "???" : uw.hours_minutes_seconds(3600 * parseInt(24 * idle_nb)) || "0") + '<br/><span style="font-size:75%;">Powered by GREPODATA ≈' + uw.hours_minutes_seconds(3600) + '</span></div>');
-                    7 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 2 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
+                    $(this).parent().find('.dio_idle').tooltip('<div style="white-space: nowrap; min-width: 220px;">' + dio_icon + "<b>" + ina + ": </b>" + (0 > parseInt(idle_nb) ? "???" : uw.hours_minutes_seconds(3600 * parseInt(idle_nb)) || "0") + '<br/><span style="font-size:75%;">Powered by GREPODATA ≈' + uw.hours_minutes_seconds(3600) + '</span></div>');
+                    72 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg db") : 
+                    24 <= idle_nb ? $(this).parent().find('.dio_idle').toggleClass("dg dr") : 
+                    6 <= idle_nb && $(this).parent().find('.dio_idle').toggleClass("dg dy");
                 }
             });
         },
