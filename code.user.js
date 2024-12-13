@@ -2,12 +2,14 @@
 // @name		NE_DIO-TOOLS-David1327
 // @namespace	https://www.tuto-de-david1327.com/pages/info/dio-tools-david1327.html
 // @version		4.36
-// @author		DIONY and David1327
+// @author		DIONY and David1327, small modifications from Neriss
 // @description Version 2024. DIO-Tools + Quack is a small extension for the browser game Grepolis. (counter, displays, smilies, trade options, changes to the layout)
 // @description:FR Version 2024. DIO-Tools + Quack est une petite extension du jeu par navigateur Grepolis. (compteur, affichages, smileys, options commerciales, modifications de la mise en page)
 // @match		https://*.grepolis.com/game/*
 // @match		https://*.forum.grepolis.com/*
 // @match		https://dio-david1327.github.io/*
+// @updateURL   https://raw.githubusercontent.com/L-Acacia/DIO-TOOLS-David1327/refs/heads/Neriss/code.user.js
+// @downloadURL	https://raw.githubusercontent.com/L-Acacia/DIO-TOOLS-David1327/refs/heads/Neriss/code.user.js
 // @require		https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js
 // @resource 	clipboard		https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js
 // @icon		https://dio-david1327.github.io/img/smileys/bussi2.gif
